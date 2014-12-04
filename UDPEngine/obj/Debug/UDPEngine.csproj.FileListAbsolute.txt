@@ -1,0 +1,1 @@
+C:\GitHub\C#\UDPEngine\UDPEngine\obj\Debug\UDPEngine.csprojResolveAssemblyReference.cache
