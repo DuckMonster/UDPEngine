@@ -25,11 +25,10 @@ namespace UDP.Server
 		{
 			int msg = 0;
 			NetworkStream stream = new NetworkStream(socket);
-			StreamReader reader = new StreamReader(stream);
 
 			do
 			{
-				msg = reader.Read
+				msg = stream.Read(new byte[1], 0, 1);
 			} while (msg != -1);
 		}
 	}

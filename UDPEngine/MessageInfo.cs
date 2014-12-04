@@ -7,7 +7,7 @@ namespace UDP
 	public class MessageInfo
 	{
 		MessageBuffer message;
-		IPEndPoint endPoint;
+		IPEndPoint adress;
 
 		public MessageBuffer Message
 		{
@@ -20,27 +20,27 @@ namespace UDP
 				message = value;
 			}
 		}
-		public IPEndPoint EndPoint
+		public IPEndPoint Adress
 		{
 			get
 			{
-				return endPoint;
+				return adress;
 			}
 			set
 			{
-				endPoint = value;
+				adress = value;
 			}
 		}
 
 		public MessageInfo(MessageBuffer message, IPEndPoint endPoint)
 		{
 			Message = message;
-			EndPoint = endPoint;
+			Adress = endPoint;
 		}
 
 		public void Send()
 		{
-			using (UdpClient udp = new UdpClient(endPoint))
+			using (UdpClient udp = new UdpClient(adress))
 			{
 				udp.Send(message.Array, message.Size);
 			}

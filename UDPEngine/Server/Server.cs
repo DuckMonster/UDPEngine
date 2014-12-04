@@ -8,7 +8,20 @@ namespace UDP.Server
 {
     public class Server
     {
+		int clientsConnected = 0;
+
 		List<Client> clientList = new List<Client>();
+		public Client GetClient(int id)
+		{
+			foreach (Client c in clientList) if (c.ID == id) return c;
+			return null;
+		}
+		public Client GetClient(IPEndPoint ip)
+		{
+			foreach (Client c in clientList) if (c.adress.Equals(ip)) return c;
+			return null;
+		}
+
 		List<MessageInfo> inMessages = new List<MessageInfo>();
 		List<MessageInfo> outMessages = new List<MessageInfo>();
 
@@ -33,7 +46,8 @@ namespace UDP.Server
 		{
 			while (inMessages.Count > 0)
 			{
-
+				host.ClientMessage(GetClient(inMessages[0].Adress).ID, inMessages[0].Message);
+				inMessages.RemoveAt(0);
 			}
 		}
 
@@ -42,7 +56,7 @@ namespace UDP.Server
 			while (true)
 			{
 				Socket s = listener.AcceptSocket();
-				ClientConnected(new Client(s, this));
+				ClientConnected(s);
 			}
 		}
 
@@ -73,10 +87,20 @@ namespace UDP.Server
 			}
 		}
 
-		public void ClientConnected(Client c)
+		public void ClientConnected(Socket s)
 		{
-			host.ClientConnected();
+			Client c = new Client(clientsConnected, s, this);
+
+			host.ClientConnected(c.ID);
 			clientList.Add(c);
+
+			clientsConnected++;
+		}
+
+		public void ClientDisconnected(Client c)
+		{
+			host.ClientDisconnected(c.ID);
+			clientList.Remove(c);
 		}
     }
 }
