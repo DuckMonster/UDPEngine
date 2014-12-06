@@ -2,6 +2,7 @@
 using System.Net;
 using System.Net.Sockets;
 using System.IO;
+using System.Threading;
 
 namespace UDP.Server
 {
@@ -9,7 +10,7 @@ namespace UDP.Server
 	{
 		public int ID;
 		public Server server;
-		public IPEndPoint adress;
+		public IPEndPoint tcpAdress, udpAdress;
 		Socket socket;
 
 		public Client(int id, Socket sock, Server serv)
@@ -18,18 +19,31 @@ namespace UDP.Server
 			server = serv;
 			socket = sock;
 
-			adress = (IPEndPoint)sock.RemoteEndPoint;
+			tcpAdress = (IPEndPoint)sock.RemoteEndPoint;
+			Thread t = new Thread(DisconnectCheckHandle);
+			t.Start();
+		}
+
+		public void SendAcceptPoll()
+		{
+			socket.Send(BitConverter.GetBytes(ID));
 		}
 
 		public void DisconnectCheckHandle()
 		{
-			int msg = 0;
-			NetworkStream stream = new NetworkStream(socket);
-
-			do
+			while (socket.Connected)
 			{
-				msg = stream.Read(new byte[1], 0, 1);
-			} while (msg != -1);
+				try
+				{
+					socket.Send(new byte[] { });
+				}
+				catch (Exception e)
+				{
+
+				}
+			}
+
+			server.ClientDisconnected(this);
 		}
 	}
 }

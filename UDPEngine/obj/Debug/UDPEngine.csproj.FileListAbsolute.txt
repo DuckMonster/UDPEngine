@@ -1,1 +1,5 @@
 C:\GitHub\C#\UDPEngine\UDPEngine\obj\Debug\UDPEngine.csprojResolveAssemblyReference.cache
+C:\GitHub\C#\UDPEngine\UDPEngine\bin\Debug\UDPEngine.dll
+C:\GitHub\C#\UDPEngine\UDPEngine\bin\Debug\UDPEngine.pdb
+C:\GitHub\C#\UDPEngine\UDPEngine\obj\Debug\UDPEngine.dll
+C:\GitHub\C#\UDPEngine\UDPEngine\obj\Debug\UDPEngine.pdb

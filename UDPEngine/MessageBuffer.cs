@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace UDP
+namespace EZUDP
 {
 	public class MessageBuffer
 	{

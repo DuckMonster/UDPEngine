@@ -2,12 +2,13 @@
 using System.Net;
 using System.Net.Sockets;
 
-namespace UDP
+namespace EZUDP
 {
 	public class MessageInfo
 	{
 		MessageBuffer message;
 		IPEndPoint adress;
+		Server.Server server;
 
 		public MessageBuffer Message
 		{
@@ -32,18 +33,16 @@ namespace UDP
 			}
 		}
 
-		public MessageInfo(MessageBuffer message, IPEndPoint endPoint)
+		public MessageInfo(MessageBuffer message, IPEndPoint endPoint, Server.Server s)
 		{
+			server = s;
 			Message = message;
 			Adress = endPoint;
 		}
 
 		public void Send()
 		{
-			using (UdpClient udp = new UdpClient(adress))
-			{
-				udp.Send(message.Array, message.Size);
-			}
+			server.udpClient.Send(message.Array, message.Size, adress);
 		}
 	}
 }
