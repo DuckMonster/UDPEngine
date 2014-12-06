@@ -83,6 +83,14 @@ namespace EZUDP.Server
 
 		Thread acceptThread, receiveThread, sendThread;
 
+		public bool Active
+		{
+			get
+			{
+				return udpSocket != null && tcpSocket != null;
+			}
+		}
+
 		public EzServer(int tcp, int udp)
 		{
 			tcpPort = tcp;
@@ -118,40 +126,54 @@ namespace EZUDP.Server
 		{
 			tcpSocket.Start();
 
-			while (true)
+			while (Active)
 			{
-				Socket s = tcpSocket.AcceptSocket();
-				ClientConnected(s);
+				try
+				{
+					Socket s = tcpSocket.AcceptSocket();
+					ClientConnected(s);
+				}
+				catch (Exception e)
+				{
+					break;
+				}
 			}
 		}
 
 		void ReceiveThread()
 		{
-			while (true)
+			while (Active)
 			{
-				IPEndPoint ip = new IPEndPoint(IPAddress.Any, 0);
-				byte[] data = udpSocket.Receive(ref ip);
-
-				Client c = GetClient(ip);
-
-				if (c != null) inMessages.Add(new MessageInfo(new MessageBuffer(data), ip, this));
-				else if (data.Length == 4)
+				try
 				{
-					int id = BitConverter.ToInt32(data, 0);
-					c = GetClient(id);
+					IPEndPoint ip = new IPEndPoint(IPAddress.Any, 0);
+					byte[] data = udpSocket.Receive(ref ip);
 
-					if (c != null)
+					Client c = GetClient(ip);
+
+					if (c != null) inMessages.Add(new MessageInfo(new MessageBuffer(data), ip, this));
+					else if (data.Length == 4)
 					{
-						c.udpAdress = ip;
-						OnConnect(c);
+						int id = BitConverter.ToInt32(data, 0);
+						c = GetClient(id);
+
+						if (c != null)
+						{
+							c.udpAdress = ip;
+							OnConnect(c);
+						}
 					}
+				}
+				catch (Exception e)
+				{
+					break;
 				}
 			}
 		}
 
 		void SendThread()
 		{
-			while (true)
+			while (Active)
 			{
 				while (outMessages.Count > 0)
 				{
@@ -182,6 +204,30 @@ namespace EZUDP.Server
 		{
 			if (c != null && c.udpAdress != null)
 				outMessages.Add(new MessageInfo(msg, c.udpAdress, this));
+		}
+
+		public void Close()
+		{
+			if (tcpSocket == null || udpSocket == null) return;
+
+			tcpSocket.Stop();
+			udpSocket.Close();
+
+			tcpSocket = null;
+			udpSocket = null;
+
+			acceptThread.Abort();
+			sendThread.Abort();
+			receiveThread.Abort();
+
+			acceptThread = null;
+			sendThread = null;
+			receiveThread = null;
+
+			List<Client> list = new List<Client>();
+			list.AddRange(clientList);
+
+			foreach (Client c in list) c.Disconnect();
 		}
 	}
 }

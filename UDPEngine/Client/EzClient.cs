@@ -133,14 +133,14 @@ namespace EZUDP.Client
 			{
 				try
 				{
-					tcpSocket.GetStream().Write(new byte[] { }, 0, 0);
+					tcpSocket.GetStream().Write(new byte[] { 1 }, 0, 1);
 				}
 				catch (Exception e)
 				{
 
 				}
 
-				Thread.Sleep(50);
+				Thread.Sleep(1000);
 			}
 
 			Disconnect();

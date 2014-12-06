@@ -32,13 +32,10 @@ namespace EZUDP.Server
 
 		void AliveThread()
 		{
-			while (IsConnected())
+			while (IsConnected() && server.Active)
 			{
 				Thread.Sleep(50);
 			}
-
-			socket.Dispose();
-			server.ClientDisconnected(this);
 		}
 
 		bool IsConnected()
@@ -56,6 +53,12 @@ namespace EZUDP.Server
 		public void Send(MessageBuffer msg)
 		{
 			server.Send(msg, this);
+		}
+
+		public void Disconnect()
+		{
+			socket.Dispose();
+			server.ClientDisconnected(this);
 		}
 	}
 }

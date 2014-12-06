@@ -34,7 +34,8 @@ namespace UDPServerTest
 			server.OnMessage += OnMessage;
 			server.OnDisconnect += OnDisconnect;
 
-			server.StartUp();
+			Thread t = new Thread(InputThread);
+			t.Start();
 		}
 
 		public void Logic()
@@ -85,6 +86,25 @@ namespace UDPServerTest
 		{
 			Console.WriteLine("{0}[{1}] disconnected!", c.ID, c.tcpAdress);
 			clientList.Remove(c);
+		}
+
+		public void InputThread()
+		{
+			while (true)
+			{
+				string input = Console.ReadLine();
+
+				if (server.Active)
+				{
+					string[] inputArgs = input.Split(' ');
+					if (inputArgs[0] == "quit") server.Close();
+					if (inputArgs[0] == "kick") server.GetClient(int.Parse(inputArgs[1])).Disconnect();
+				}
+				else
+				{
+					if (input == "start") server.StartUp();
+				}
+			}
 		}
 	}
 }
