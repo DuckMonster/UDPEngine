@@ -34,15 +34,18 @@ namespace EZUDP.Server
 		{
 			while (IsConnected() && server.Active)
 			{
-				Thread.Sleep(50);
+				Thread.Sleep(1000);
 			}
+
+			Disconnect();
 		}
 
 		bool IsConnected()
 		{
 			try
 			{
-				return !(socket.Poll(1, SelectMode.SelectRead) && socket.Available == 0);
+				socket.Send(new byte[] { 0 });
+				return true;
 			}
 			catch (Exception e)
 			{
@@ -57,7 +60,10 @@ namespace EZUDP.Server
 
 		public void Disconnect()
 		{
-			socket.Dispose();
+			if (socket == null) return;
+
+			socket.Close();
+			socket = null;
 			server.ClientDisconnected(this);
 		}
 	}

@@ -58,6 +58,7 @@ namespace EZUDP.Server
 			}
 		}
 
+		List<Client> disconnectedList = new List<Client>(), connectedList = new List<Client>();
 		List<Client> clientList = new List<Client>();
 		public Client GetClient(int id)
 		{
@@ -120,6 +121,18 @@ namespace EZUDP.Server
 				OnMessage(GetClient(inMessages[0].Adress), inMessages[0].Message);
 				inMessages.RemoveAt(0);
 			}
+
+			while (connectedList.Count > 0)
+			{
+				OnConnect(connectedList[0]);
+				connectedList.RemoveAt(0);
+			}
+
+			while (disconnectedList.Count > 0)
+			{
+				OnDisconnect(disconnectedList[0]);
+				disconnectedList.RemoveAt(0);
+			}
 		}
 
 		void AcceptThread()
@@ -160,13 +173,12 @@ namespace EZUDP.Server
 						if (c != null)
 						{
 							c.udpAdress = ip;
-							OnConnect(c);
+							connectedList.Add(c);
 						}
 					}
 				}
 				catch (Exception e)
 				{
-					break;
 				}
 			}
 		}
@@ -196,7 +208,7 @@ namespace EZUDP.Server
 		public void ClientDisconnected(Client c)
 		{
 			clientList.Remove(c);
-			OnDisconnect(c);
+			disconnectedList.Add(c);
 		}
 
 		public void Send(MessageBuffer msg, int id) { Send(msg, GetClient(id)); }

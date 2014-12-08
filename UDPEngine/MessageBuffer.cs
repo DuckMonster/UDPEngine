@@ -37,6 +37,10 @@ namespace EZUDP
 		{
 			cursor += n;
 		}
+		public void Reset()
+		{
+			cursor = 0;
+		}
 
 		public byte ReadByte()
 		{
@@ -62,6 +66,22 @@ namespace EZUDP
 			return ret;
 		}
 
+		public float ReadFloat()
+		{
+			float ret = BitConverter.ToSingle(byteList.ToArray(), cursor);
+			MoveCursor(4);
+
+			return ret;
+		}
+
+		public double ReadDouble()
+		{
+			double ret = BitConverter.ToDouble(byteList.ToArray(), cursor);
+			MoveCursor(8);
+
+			return ret;
+		}
+
 		public string ReadString()
 		{
 			int len = ReadInt();
@@ -73,18 +93,34 @@ namespace EZUDP
 			return s;
 		}
 
+		public void WriteByte(short b) { WriteByte((byte)b); }
+		public void WriteByte(int b) { WriteByte((byte)b); }
 		public void WriteByte(byte b)
 		{
 			byteList.Add(b);
 		}
+
+		public void WriteShort(int s) { WriteShort((short)s); }
 		public void WriteShort(short s)
 		{
 			byteList.AddRange(BitConverter.GetBytes(s));
 		}
+
 		public void WriteInt(int i)
 		{
 			byteList.AddRange(BitConverter.GetBytes(i));
 		}
+
+		public void WriteFloat(float f)
+		{
+			byteList.AddRange(BitConverter.GetBytes(f));
+		}
+
+		public void WriteDouble(double d)
+		{
+			byteList.AddRange(BitConverter.GetBytes(d));
+		}
+
 		public void WriteString(string s)
 		{
 			WriteInt(s.Length);

@@ -38,10 +38,6 @@ namespace EZUDP.Client
 		public EzClient()
 		{
 		}
-		public EzClient(string ip, int tcpPort, int udpPort)
-		{
-			Connect(ip, tcpPort, udpPort);
-		}
 
 		public void Connect(string ip, int tcpPort, int udpPort)
 		{
@@ -77,7 +73,7 @@ namespace EZUDP.Client
 				tcpSocket.GetStream().Read(buff, 0, 4);
 
 				myID = BitConverter.ToInt32(buff, 0);
-				Send(new MessageBuffer(buff));
+				udpSocket.Send(buff, 4);
 
 				receiveThread = new Thread(ReceiveThread);
 				sendThread = new Thread(SendThread);
