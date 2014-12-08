@@ -160,6 +160,7 @@ namespace EZUDP.Server
 				try
 				{
 					IPEndPoint ip = new IPEndPoint(IPAddress.Any, 0);
+					Console.WriteLine("Listening...");
 					byte[] data = udpSocket.Receive(ref ip);
 
 					Client c = GetClient(ip);
@@ -179,6 +180,7 @@ namespace EZUDP.Server
 				}
 				catch (Exception e)
 				{
+					Console.WriteLine(e);
 				}
 			}
 		}
