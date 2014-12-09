@@ -17,3 +17,5 @@ C:\GitHub\C#\UDPEngine\UDPClientTest\obj\Debug\UDPClientTest.pdb
 C:\GitHub\C#\UDPEngine\UDPClientTest\bin\Debug\OpenTK.dll
 C:\GitHub\C#\UDPEngine\UDPClientTest\bin\Debug\OpenTK.pdb
 C:\GitHub\C#\UDPEngine\UDPClientTest\bin\Debug\OpenTK.xml
+D:\GitHub\C#\UDPEngine\UDPClientTest\bin\Debug\OpenTK.dll
+D:\GitHub\C#\UDPEngine\UDPClientTest\bin\Debug\OpenTK.pdb

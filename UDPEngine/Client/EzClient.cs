@@ -9,6 +9,11 @@ namespace EZUDP.Client
 {
 	public class EzClient
 	{
+		public static class DebugInfo
+		{
+			public static bool Data = false;
+		}
+
 		static readonly byte pingByte = byte.MaxValue;
 		Stopwatch pingWatch;
 
@@ -150,7 +155,7 @@ namespace EZUDP.Client
 					IPEndPoint ip = udpAdress;
 					byte[] data = udpSocket.Receive(ref ip);
 
-					Debug("Received " + data.Length);
+					if (DebugInfo.Data) Debug("Received " + data.Length);
 
 					if (data.Length == 1 && data[0] == pingByte)
 					{
@@ -187,7 +192,7 @@ namespace EZUDP.Client
 			{
 				while (outMessages.Count > 0)
 				{
-					Debug("Sent " + outMessages[0].Size);
+					if (DebugInfo.Data) Debug("Sent " + outMessages[0].Size);
 
 					udpSocket.Send(outMessages[0].Array, outMessages[0].Size);
 					upByteBuffer += outMessages[0].Size;

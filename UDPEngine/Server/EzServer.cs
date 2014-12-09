@@ -8,6 +8,11 @@ namespace EZUDP.Server
 {
 	public class EzServer
 	{
+		public static class DebugInfo
+		{
+			public static bool Data = false;
+		}
+
 		public static byte pingByte = byte.MaxValue;
 
 		static int upByteBuffer, downByteBuffer;
@@ -153,8 +158,8 @@ namespace EZUDP.Server
 		public void StartUp()
 		{
 			udpSocket = new UdpClient(udpPort);
-			//tcpSocket = new TcpListener(IPAddress.Parse(LocalIP), tcpPort);
-			tcpSocket = new TcpListener(IPAddress.Parse("127.0.0.1"), tcpPort);
+			tcpSocket = new TcpListener(IPAddress.Parse(LocalIP), tcpPort);
+			//tcpSocket = new TcpListener(IPAddress.Parse("127.0.0.1"), tcpPort);
 
 			acceptThread = new Thread(AcceptThread);	
 			receiveThread = new Thread(ReceiveThread);
@@ -220,7 +225,7 @@ namespace EZUDP.Server
 					IPEndPoint ip = new IPEndPoint(IPAddress.Any, 0);
 					byte[] data = udpSocket.Receive(ref ip);
 
-					Debug("Received " + data.Length);
+					if (DebugInfo.Data) Debug("Received " + data.Length);
 
 					Client c = GetClient(ip);
 
@@ -267,7 +272,7 @@ namespace EZUDP.Server
 			{
 				while (outMessages.Count > 0)
 				{
-					Debug("Received " + outMessages[0].Message.Size);
+					if (DebugInfo.Data) Debug("Sent " + outMessages[0].Message.Size);
 
 					outMessages[0].Send();
 					upByteBuffer += outMessages[0].Message.Size;
