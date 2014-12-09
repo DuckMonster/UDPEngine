@@ -1,4 +1,5 @@
-﻿using System;
+﻿using OpenTK;
+using System;
 using System.Collections.Generic;
 
 namespace EZUDP
@@ -93,6 +94,19 @@ namespace EZUDP
 			return s;
 		}
 
+		public Vector2 ReadVector2()
+		{
+			return new Vector2(ReadFloat(), ReadFloat());
+		}
+		public Vector3 ReadVector3()
+		{
+			return new Vector3(ReadFloat(), ReadFloat(), ReadFloat());
+		}
+		public Vector4 ReadVector4()
+		{
+			return new Vector4(ReadFloat(), ReadFloat(), ReadFloat(), ReadFloat());
+		}
+
 		public void WriteByte(short b) { WriteByte((byte)b); }
 		public void WriteByte(int b) { WriteByte((byte)b); }
 		public void WriteByte(byte b)
@@ -126,6 +140,25 @@ namespace EZUDP
 			WriteInt(s.Length);
 			for (int i = 0; i < s.Length; i++)
 				WriteByte((byte)s[i]);
+		}
+
+		public void WriteVector(Vector2 v)
+		{
+			WriteFloat(v.X);
+			WriteFloat(v.Y);
+		}
+		public void WriteVector(Vector3 v)
+		{
+			WriteFloat(v.X);
+			WriteFloat(v.Y);
+			WriteFloat(v.Z);
+		}
+		public void WriteVector(Vector4 v)
+		{
+			WriteFloat(v.X);
+			WriteFloat(v.Y);
+			WriteFloat(v.Z);
+			WriteFloat(v.W);
 		}
 	}
 }

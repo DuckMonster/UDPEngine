@@ -8,3 +8,6 @@ D:\GitHub\C#\UDPEngine\UDPEngine\obj\Debug\UDPEngine.dll
 D:\GitHub\C#\UDPEngine\UDPEngine\obj\Debug\UDPEngine.pdb
 D:\GitHub\C#\UDPEngine\UDPEngine\bin\Debug\UDPEngine.dll
 D:\GitHub\C#\UDPEngine\UDPEngine\bin\Debug\UDPEngine.pdb
+C:\GitHub\C#\UDPEngine\UDPEngine\bin\Debug\OpenTK.dll
+C:\GitHub\C#\UDPEngine\UDPEngine\bin\Debug\OpenTK.pdb
+C:\GitHub\C#\UDPEngine\UDPEngine\bin\Debug\OpenTK.xml

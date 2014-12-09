@@ -14,3 +14,6 @@ C:\GitHub\C#\UDPEngine\UDPServerTest\bin\Debug\UDPEngine.pdb
 C:\GitHub\C#\UDPEngine\UDPServerTest\obj\Debug\UDPServerTest.csprojResolveAssemblyReference.cache
 C:\GitHub\C#\UDPEngine\UDPServerTest\obj\Debug\UDPServerTest.exe
 C:\GitHub\C#\UDPEngine\UDPServerTest\obj\Debug\UDPServerTest.pdb
+C:\GitHub\C#\UDPEngine\UDPServerTest\bin\Debug\OpenTK.dll
+C:\GitHub\C#\UDPEngine\UDPServerTest\bin\Debug\OpenTK.pdb
+C:\GitHub\C#\UDPEngine\UDPServerTest\bin\Debug\OpenTK.xml

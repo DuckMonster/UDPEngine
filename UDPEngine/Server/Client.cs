@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -11,6 +12,15 @@ namespace EZUDP.Server
 		public IPEndPoint tcpAdress, udpAdress;
 		EzServer server;
 		Socket socket;
+		Stopwatch pingWatch;
+
+		public bool Pinging
+		{
+			get
+			{
+				return pingWatch != null;
+			}
+		}
 
 		public Client(int id, Socket sock, EzServer serv)
 		{
@@ -65,6 +75,20 @@ namespace EZUDP.Server
 			socket.Close();
 			socket = null;
 			server.ClientDisconnected(this);
+		}
+
+		public void Ping()
+		{
+			if (Pinging)
+			{
+				server.PingResult(this, pingWatch.Elapsed.Milliseconds);
+				pingWatch = null;
+			}
+			else
+			{
+				pingWatch = Stopwatch.StartNew();
+				server.Send(new MessageBuffer(new byte[] { EzServer.pingByte }), this);
+			}
 		}
 	}
 }

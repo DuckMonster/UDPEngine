@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -8,17 +9,59 @@ namespace EZUDP.Client
 {
 	public class EzClient
 	{
+		static readonly byte pingByte = byte.MaxValue;
+		Stopwatch pingWatch;
+
+		bool Pinging
+		{
+			get
+			{
+				return pingWatch != null;
+			}
+		}
+
+		static int upByteBuffer, downByteBuffer;
+		public static int UpBytes
+		{
+			get
+			{
+				int n = upByteBuffer;
+				upByteBuffer = 0;
+
+				return n;
+			}
+		}
+
+		public static int DownBytes
+		{
+			get
+			{
+				int n = downByteBuffer;
+				downByteBuffer = 0;
+
+				return n;
+			}
+		}
+
 		public delegate void ConnectHandle();
 		public delegate void MessageHandle(MessageBuffer msg);
 		public delegate void DisconnectHandle();
+		public delegate void ExceptionHandle(Exception e);
+		public delegate void PingHandle(int m);
+		public delegate void DebugHandle(string msg);
 
 		int myID;
 
+		List<string> debugMessageList = new List<string>();
+		void Debug(string s) { debugMessageList.Add(s); }
 		List<MessageBuffer> inMessages = new List<MessageBuffer>(), outMessages = new List<MessageBuffer>();
 
 		public event ConnectHandle OnConnect;
 		public event DisconnectHandle OnDisconnect;
 		public event MessageHandle OnMessage;
+		public event ExceptionHandle OnException;
+		public event PingHandle OnPing;
+		public event DebugHandle OnDebug;
 
 		IPEndPoint tcpAdress, udpAdress;
 		TcpClient tcpSocket;
@@ -57,6 +100,10 @@ namespace EZUDP.Client
 				OnMessage(inMessages[0]);
 				inMessages.RemoveAt(0);
 			}
+
+			string[] debug = debugMessageList.ToArray();
+			foreach (string s in debug) if (OnDebug != null) OnDebug(s);
+			debugMessageList.Clear();
 		}
 
 		void ConnectThread()
@@ -73,6 +120,8 @@ namespace EZUDP.Client
 				tcpSocket.GetStream().Read(buff, 0, 4);
 
 				myID = BitConverter.ToInt32(buff, 0);
+
+				Thread.Sleep(500);
 				udpSocket.Send(buff, 4);
 
 				receiveThread = new Thread(ReceiveThread);
@@ -87,7 +136,7 @@ namespace EZUDP.Client
 			}
 			catch (Exception e)
 			{
-				Console.WriteLine(e);
+				CatchException(e);
 				Disconnect();
 			}
 		}
@@ -101,11 +150,33 @@ namespace EZUDP.Client
 					IPEndPoint ip = udpAdress;
 					byte[] data = udpSocket.Receive(ref ip);
 
+					Debug("Received " + data.Length);
+
+					if (data.Length == 1 && data[0] == pingByte)
+					{
+						if (Pinging)
+						{
+							if (OnPing != null)
+							{
+								OnPing(pingWatch.Elapsed.Milliseconds);
+							}
+
+							pingWatch = null;
+						}
+						else
+						{
+							udpSocket.Send(data, data.Length);
+						}
+
+						continue;
+					}
+
 					inMessages.Add(new MessageBuffer(data));
+					downByteBuffer += data.Length;
 				}
 				catch (Exception e)
 				{
-					Console.WriteLine(e);
+					CatchException(e);
 				}
 			}
 		}
@@ -116,7 +187,11 @@ namespace EZUDP.Client
 			{
 				while (outMessages.Count > 0)
 				{
+					Debug("Sent " + outMessages[0].Size);
+
 					udpSocket.Send(outMessages[0].Array, outMessages[0].Size);
+					upByteBuffer += outMessages[0].Size;
+
 					outMessages.RemoveAt(0);
 				}
 
@@ -134,7 +209,7 @@ namespace EZUDP.Client
 				}
 				catch (Exception e)
 				{
-					Console.WriteLine(e);
+					CatchException(e);
 				}
 
 				Thread.Sleep(1000);
@@ -160,6 +235,20 @@ namespace EZUDP.Client
 		public void Send(MessageBuffer msg)
 		{
 			outMessages.Add(msg);
+		}
+
+		void CatchException(Exception e)
+		{
+			if (OnException != null) OnException(e);
+		}
+
+		public void Ping()
+		{
+			if (!Pinging)
+			{
+				pingWatch = Stopwatch.StartNew();
+				udpSocket.Send(new byte[] { pingByte }, 1);
+			}
 		}
 	}
 }
