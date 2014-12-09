@@ -105,6 +105,7 @@ namespace EZUDP.Client
 				}
 				catch (Exception e)
 				{
+					Console.WriteLine(e);
 				}
 			}
 		}
@@ -133,7 +134,7 @@ namespace EZUDP.Client
 				}
 				catch (Exception e)
 				{
-
+					Console.WriteLine(e);
 				}
 
 				Thread.Sleep(1000);

@@ -27,7 +27,7 @@ namespace UDPServerTest
 
 		public Program()
 		{
-			server = new EzServer(12345, 1337);
+			server = new EzServer(1255, 1337);
 
 			server.OnStart += OnStart;
 			server.OnConnect += OnConnect;

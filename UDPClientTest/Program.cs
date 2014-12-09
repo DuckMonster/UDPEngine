@@ -72,7 +72,7 @@ namespace UDPClientTest
 				}
 				else
 				{
-					if (m == "connect") client.Connect("127.0.0.1", 12345, 1337);
+					if (m == "connect") client.Connect("90.224.59.61", 1255, 1337);
 				}
 			}
 		}

@@ -14,7 +14,6 @@ namespace EZUDP.Server
 		public delegate void DisconnectHandle(Client c);
 
 		int nmbrOfClients = 0;
-
 		
 		class MessageInfo
 		{
@@ -92,6 +91,26 @@ namespace EZUDP.Server
 			}
 		}
 
+		public string LocalIP
+		{
+			get
+			{
+				IPHostEntry host = Dns.GetHostEntry(Dns.GetHostName());
+				string localIP = "";
+
+				foreach (IPAddress ip in host.AddressList)
+				{
+					if (ip.AddressFamily == AddressFamily.InterNetwork)
+					{
+						localIP = ip.ToString();
+						break;
+					}
+				}
+
+				return localIP;
+			}
+		}
+
 		public EzServer(int tcp, int udp)
 		{
 			tcpPort = tcp;
@@ -101,7 +120,7 @@ namespace EZUDP.Server
 		public void StartUp()
 		{
 			udpSocket = new UdpClient(udpPort);
-			tcpSocket = new TcpListener(IPAddress.Parse("127.0.0.1"), tcpPort);
+			tcpSocket = new TcpListener(IPAddress.Parse(LocalIP), tcpPort);
 
 			acceptThread = new Thread(AcceptThread);
 			receiveThread = new Thread(ReceiveThread);
@@ -160,7 +179,6 @@ namespace EZUDP.Server
 				try
 				{
 					IPEndPoint ip = new IPEndPoint(IPAddress.Any, 0);
-					Console.WriteLine("Listening...");
 					byte[] data = udpSocket.Receive(ref ip);
 
 					Client c = GetClient(ip);
