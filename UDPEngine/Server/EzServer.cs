@@ -155,11 +155,11 @@ namespace EZUDP.Server
 			udpPort = udp;
 		}
 
-		public void StartUp()
+		public void StartUp() { StartUp(LocalIP); }
+		public void StartUp(string ip)
 		{
 			udpSocket = new UdpClient(udpPort);
-			tcpSocket = new TcpListener(IPAddress.Parse(LocalIP), tcpPort);
-			//tcpSocket = new TcpListener(IPAddress.Parse("127.0.0.1"), tcpPort);
+			tcpSocket = new TcpListener(IPAddress.Parse(ip), tcpPort);
 
 			acceptThread = new Thread(AcceptThread);	
 			receiveThread = new Thread(ReceiveThread);
