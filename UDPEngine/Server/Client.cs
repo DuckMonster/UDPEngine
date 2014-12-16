@@ -31,11 +31,9 @@ namespace EZUDP.Server
 			tcpAdress = (IPEndPoint)sock.RemoteEndPoint;
 			Thread t = new Thread(AliveThread);
 			t.Start();
-
-			SendAcceptPoll();
 		}
 
-		void SendAcceptPoll()
+		public void SendAcceptPoll()
 		{
 			socket.Send(BitConverter.GetBytes(ID));
 		}
@@ -54,11 +52,16 @@ namespace EZUDP.Server
 		{
 			try
 			{
-				socket.Send(new byte[] { 0 });
+				if (udpAdress != null) socket.Send(new byte[] { 0 });
 				return true;
+			}
+			catch (SocketException e)
+			{
+				return false;
 			}
 			catch (Exception e)
 			{
+				server.CatchException(e);
 				return false;
 			}
 		}

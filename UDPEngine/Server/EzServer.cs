@@ -10,7 +10,9 @@ namespace EZUDP.Server
 	{
 		public static class DebugInfo
 		{
-			public static bool Data = false;
+			public static bool upData = false;
+			public static bool downData = false;
+			public static bool acceptData = false;
 		}
 
 		public static byte pingByte = byte.MaxValue;
@@ -112,7 +114,7 @@ namespace EZUDP.Server
 		public event DebugHandle OnDebug;
 
 		List<string> debugMessageList = new List<string>();
-		void Debug(string s) { debugMessageList.Add(s); }
+		public void Debug(string s) { debugMessageList.Add(s); }
 		List<MessageInfo> inMessages = new List<MessageInfo>(), outMessages = new List<MessageInfo>();
 
 		UdpClient udpSocket;
@@ -192,9 +194,11 @@ namespace EZUDP.Server
 				disconnectedList.RemoveAt(0);
 			}
 
-			string[] debug = debugMessageList.ToArray();
-			foreach (string s in debug) if (OnDebug != null) OnDebug(s);
-			debugMessageList.Clear();
+			while (debugMessageList.Count > 0)
+			{
+				OnDebug(debugMessageList[0]);
+				debugMessageList.RemoveAt(0);
+			}
 		}
 
 		void AcceptThread()
@@ -225,7 +229,12 @@ namespace EZUDP.Server
 					IPEndPoint ip = new IPEndPoint(IPAddress.Any, 0);
 					byte[] data = udpSocket.Receive(ref ip);
 
-					if (DebugInfo.Data) Debug("Received " + data.Length);
+					if (DebugInfo.downData && data.Length > 1)
+					{
+						string dataString = "";
+						foreach (byte b in data) dataString += b + " ";
+						Debug("Received " + data.Length + "[" + dataString + "]");
+					}
 
 					Client c = GetClient(ip);
 
@@ -244,7 +253,10 @@ namespace EZUDP.Server
 						continue;
 					}
 
-					if (c != null) inMessages.Add(new MessageInfo(new MessageBuffer(data), ip, this));
+					if (c != null)
+					{
+						inMessages.Add(new MessageInfo(new MessageBuffer(data), ip, this));
+					}
 					else if (data.Length == 4)
 					{
 						int id = BitConverter.ToInt32(data, 0);
@@ -252,9 +264,15 @@ namespace EZUDP.Server
 
 						if (c != null)
 						{
+							if (DebugInfo.acceptData) Debug("Received udp ip for ID " + id);
+
 							c.udpAdress = ip;
 							connectedList.Add(c);
 						}
+					} 
+					
+					if (c == null) {
+						Debug("Received data from unknown client...");
 					}
 
 					downByteBuffer += data.Length;
@@ -272,7 +290,12 @@ namespace EZUDP.Server
 			{
 				while (outMessages.Count > 0)
 				{
-					if (DebugInfo.Data) Debug("Sent " + outMessages[0].Message.Size);
+					if (DebugInfo.downData && outMessages[0].Message.Size > 1)
+					{
+						string dataString = "";
+						foreach (byte b in outMessages[0].Message.Array) dataString += b + " ";
+						Debug("Sending " + outMessages[0].Message.Size + "[" + dataString + "]");
+					}
 
 					outMessages[0].Send();
 					upByteBuffer += outMessages[0].Message.Size;
@@ -287,6 +310,7 @@ namespace EZUDP.Server
 		{
 			Client c = new Client(nmbrOfClients, s, this);
 			clientList.Add(c);
+			c.SendAcceptPoll();
 
 			nmbrOfClients++;
 		}
@@ -328,7 +352,7 @@ namespace EZUDP.Server
 			foreach (Client c in list) c.Disconnect();
 		}
 
-		void CatchException(Exception e)
+		public void CatchException(Exception e)
 		{
 			if (OnException != null) OnException(e);
 		}

@@ -121,12 +121,15 @@ namespace EZUDP.Client
 				tcpSocket.Connect(tcpAdress);
 				udpSocket.Connect(udpAdress);
 
+				//Read accepted ID
 				byte[] buff = new byte[4];
-				tcpSocket.GetStream().Read(buff, 0, 4);
+				NetworkStream s = tcpSocket.GetStream();
 
+				for (int i = 0; i < buff.Length; i++)
+					buff[i] = (byte)s.ReadByte();
+
+				//Send it back
 				myID = BitConverter.ToInt32(buff, 0);
-
-				Thread.Sleep(500);
 				udpSocket.Send(buff, 4);
 
 				receiveThread = new Thread(ReceiveThread);

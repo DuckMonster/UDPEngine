@@ -62,7 +62,11 @@ namespace UDPClientTest
 
 				if (client.Connected)
 				{
-					if (m == "quit") client.Disconnect();
+					if (m == "quit")
+					{
+						client.Disconnect();
+						Console.Clear();
+					}
 					else
 					{
 						MessageBuffer msg = new MessageBuffer();
@@ -72,7 +76,12 @@ namespace UDPClientTest
 				}
 				else
 				{
-					if (m == "connect") client.Connect("90.224.59.61", 1255, 1337);
+					if (m == "connect")
+					{
+						Console.Clear();
+						Console.WriteLine("Connecting....");
+						client.Connect("127.0.0.1", 1255, 1337);
+					}
 				}
 			}
 		}

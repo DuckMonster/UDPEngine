@@ -29,10 +29,13 @@ namespace UDPServerTest
 		{
 			server = new EzServer(1255, 1337);
 
+			EzServer.DebugInfo.upData = true;
+
 			server.OnStart += OnStart;
 			server.OnConnect += OnConnect;
 			server.OnMessage += OnMessage;
 			server.OnDisconnect += OnDisconnect;
+			server.OnDebug += OnDebug;
 
 			Thread t = new Thread(InputThread);
 			t.Start();
@@ -50,7 +53,7 @@ namespace UDPServerTest
 
 		public void OnConnect(Client c)
 		{
-			Console.WriteLine("{0}[{1}] connected!", c.ID, c.udpAdress);
+			Console.WriteLine("{0}[{1}, {2}] connected!", c.ID, c.tcpAdress, c.udpAdress);
 			clientList.Add(c);
 
 			MessageBuffer msg = new MessageBuffer();
@@ -84,8 +87,15 @@ namespace UDPServerTest
 
 		public void OnDisconnect(Client c)
 		{
-			Console.WriteLine("{0}[{1}] disconnected!", c.ID, c.tcpAdress);
+			Console.WriteLine("{0}[{1}, {2}] disconnected!", c.ID, c.tcpAdress, c.udpAdress);
 			clientList.Remove(c);
+		}
+
+		public void OnDebug(string s)
+		{
+			Console.ForegroundColor = ConsoleColor.Green;
+			Console.WriteLine(s);
+			Console.ForegroundColor = ConsoleColor.Gray;
 		}
 
 		public void InputThread()
@@ -102,7 +112,7 @@ namespace UDPServerTest
 				}
 				else
 				{
-					if (input == "start") server.StartUp();
+					if (input == "start") server.StartUp("127.0.0.1");
 				}
 			}
 		}
