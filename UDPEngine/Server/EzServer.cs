@@ -160,18 +160,25 @@ namespace EZUDP.Server
 		public void StartUp() { StartUp(LocalIP); }
 		public void StartUp(string ip)
 		{
-			udpSocket = new UdpClient(udpPort);
-			tcpSocket = new TcpListener(IPAddress.Parse(ip), tcpPort);
+			try
+			{
+				udpSocket = new UdpClient(udpPort);
+				tcpSocket = new TcpListener(IPAddress.Parse(ip), tcpPort);
 
-			acceptThread = new Thread(AcceptThread);	
-			receiveThread = new Thread(ReceiveThread);
-			sendThread = new Thread(SendThread);
+				acceptThread = new Thread(AcceptThread);
+				receiveThread = new Thread(ReceiveThread);
+				sendThread = new Thread(SendThread);
 
-			acceptThread.Start();
-			receiveThread.Start();
-			sendThread.Start();
+				acceptThread.Start();
+				receiveThread.Start();
+				sendThread.Start();
 
-			OnStart();
+				OnStart();
+			}
+			catch (Exception e)
+			{
+				CatchException(e);
+			}
 		}
 
 		public void Update()
@@ -290,15 +297,19 @@ namespace EZUDP.Server
 			{
 				while (outMessages.Count > 0)
 				{
-					if (DebugInfo.downData && outMessages[0].Message.Size > 1)
+					if (outMessages[0] != null)
 					{
-						string dataString = "";
-						foreach (byte b in outMessages[0].Message.Array) dataString += b + " ";
-						Debug("Sending " + outMessages[0].Message.Size + "[" + dataString + "]");
+						if (DebugInfo.downData && outMessages[0].Message.Size > 1)
+						{
+							string dataString = "";
+							foreach (byte b in outMessages[0].Message.Array) dataString += b + " ";
+							Debug("Sending " + outMessages[0].Message.Size + "[" + dataString + "]");
+						}
+
+						outMessages[0].Send();
+						upByteBuffer += outMessages[0].Message.Size;
 					}
 
-					outMessages[0].Send();
-					upByteBuffer += outMessages[0].Message.Size;
 					outMessages.RemoveAt(0);
 				}
 
