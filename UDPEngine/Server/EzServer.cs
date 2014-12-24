@@ -18,6 +18,7 @@ namespace EZUDP.Server
 		public static byte pingByte = byte.MaxValue;
 
 		static int upByteBuffer, downByteBuffer;
+		static int upByteTotal, downByteTotal;
 		public static int UpBytes
 		{
 			get
@@ -37,6 +38,22 @@ namespace EZUDP.Server
 				downByteBuffer = 0;
 
 				return n;
+			}
+		}
+
+		public static int UpBytesTotal
+		{
+			get
+			{
+				return upByteTotal;
+			}
+		}
+
+		public static int DownBytesTotal
+		{
+			get
+			{
+				return downByteTotal;
 			}
 		}
 
@@ -283,6 +300,7 @@ namespace EZUDP.Server
 					}
 
 					downByteBuffer += data.Length;
+					downByteTotal += data.Length;
 				}
 				catch (Exception e)
 				{
@@ -308,12 +326,13 @@ namespace EZUDP.Server
 
 						outMessages[0].Send();
 						upByteBuffer += outMessages[0].Message.Size;
+						upByteTotal += outMessages[0].Message.Size;
+
+						outMessages.RemoveAt(0);
 					}
 
-					outMessages.RemoveAt(0);
+					Thread.Sleep(1);
 				}
-
-				Thread.Sleep(1);
 			}
 		}
 

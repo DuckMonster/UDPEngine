@@ -26,6 +26,7 @@ namespace EZUDP.Client
 		}
 
 		static int upByteBuffer, downByteBuffer;
+		static int upByteTotal, downByteTotal;
 		public static int UpBytes
 		{
 			get
@@ -45,6 +46,22 @@ namespace EZUDP.Client
 				downByteBuffer = 0;
 
 				return n;
+			}
+		}
+
+		public static int UpBytesTotal
+		{
+			get
+			{
+				return upByteTotal;
+			}
+		}
+
+		public static int DownBytesTotal
+		{
+			get
+			{
+				return DownBytesTotal;
 			}
 		}
 
@@ -181,6 +198,7 @@ namespace EZUDP.Client
 
 					inMessages.Add(new MessageBuffer(data));
 					downByteBuffer += data.Length;
+					downByteTotal += data.Length;
 				}
 				catch (Exception e)
 				{
@@ -199,6 +217,7 @@ namespace EZUDP.Client
 
 					udpSocket.Send(outMessages[0].Array, outMessages[0].Size);
 					upByteBuffer += outMessages[0].Size;
+					upByteTotal += outMessages[0].Size;
 
 					outMessages.RemoveAt(0);
 				}
