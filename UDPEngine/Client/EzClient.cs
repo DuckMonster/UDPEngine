@@ -61,7 +61,7 @@ namespace EZUDP.Client
 		{
 			get
 			{
-				return DownBytesTotal;
+				return downByteTotal;
 			}
 		}
 
