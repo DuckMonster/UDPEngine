@@ -263,6 +263,10 @@ namespace EZUDP.Server
 
 					inMessagesRaw.Add(Tuple.Create(data, ip));
 				}
+				catch (SocketException e)
+				{
+
+				}
 				catch (Exception e)
 				{
 					CatchException(e);
