@@ -277,7 +277,7 @@ namespace EZUDP.Server
 						inMessagesRaw.RemoveAt(0);
 					}
 
-					Thread.Sleep(1);
+					Thread.Sleep(5);
 				}
 				catch (Exception e)
 				{

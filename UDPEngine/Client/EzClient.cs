@@ -77,6 +77,7 @@ namespace EZUDP.Client
 		List<string> debugMessageList = new List<string>();
 		void Debug(string s) { debugMessageList.Add(s); }
 		List<MessageBuffer> inMessages = new List<MessageBuffer>(), outMessages = new List<MessageBuffer>();
+		List<byte[]> inMessagesRaw = new List<byte[]>();
 
 		public event ConnectHandle OnConnect;
 		public event DisconnectHandle OnDisconnect;
@@ -89,7 +90,7 @@ namespace EZUDP.Client
 		TcpClient tcpSocket;
 		UdpClient udpSocket;
 
-		Thread receiveThread, sendThread, aliveThread;
+		Thread receiveThread, receiveDataThread, sendThread, aliveThread;
 
 		public bool Connected
 		{
@@ -150,10 +151,12 @@ namespace EZUDP.Client
 				udpSocket.Send(buff, 4);
 
 				receiveThread = new Thread(ReceiveThread);
+				receiveDataThread = new Thread(ReceiveDataThread);
 				sendThread = new Thread(SendThread);
 				aliveThread = new Thread(AliveThread);
 
 				receiveThread.Start();
+				receiveDataThread.Start();
 				sendThread.Start();
 				aliveThread.Start();
 
@@ -175,36 +178,62 @@ namespace EZUDP.Client
 					IPEndPoint ip = udpAdress;
 					byte[] data = udpSocket.Receive(ref ip);
 
-					if (DebugInfo.Data) Debug("Received " + data.Length);
-
-					if (data.Length == 1 && data[0] == pingByte)
-					{
-						if (Pinging)
-						{
-							if (OnPing != null)
-							{
-								OnPing(pingWatch.Elapsed.Milliseconds);
-							}
-
-							pingWatch = null;
-						}
-						else
-						{
-							udpSocket.Send(data, data.Length);
-						}
-
-						continue;
-					}
-
-					inMessages.Add(new MessageBuffer(data));
-					downByteBuffer += data.Length;
-					downByteTotal += data.Length;
+					inMessagesRaw.Add(data);
 				}
 				catch (Exception e)
 				{
 					CatchException(e);
 				}
 			}
+		}
+
+		void ReceiveDataThread()
+		{
+			while (Connected)
+			{
+				try
+				{
+					while (inMessagesRaw.Count > 0)
+					{
+						ReceiveData(inMessagesRaw[0]);
+						inMessagesRaw.RemoveAt(0);
+					}
+
+					Thread.Sleep(5);
+				}
+				catch (Exception e)
+				{
+					CatchException(e);
+				}
+			}
+		}
+
+		void ReceiveData(byte[] data)
+		{
+			if (DebugInfo.Data) Debug("Received " + data.Length);
+
+			if (data.Length == 1 && data[0] == pingByte)
+			{
+				if (Pinging)
+				{
+					if (OnPing != null)
+					{
+						OnPing(pingWatch.Elapsed.Milliseconds);
+					}
+
+					pingWatch = null;
+				}
+				else
+				{
+					udpSocket.Send(data, data.Length);
+				}
+
+				return;
+			}
+
+			inMessages.Add(new MessageBuffer(data));
+			downByteBuffer += data.Length;
+			downByteTotal += data.Length;
 		}
 
 		void SendThread()
