@@ -77,7 +77,6 @@ namespace EZUDP.Client
 		List<string> debugMessageList = new List<string>();
 		void Debug(string s) { debugMessageList.Add(s); }
 		List<MessageBuffer> inMessages = new List<MessageBuffer>(), outMessages = new List<MessageBuffer>();
-		List<byte[]> inMessagesRaw = new List<byte[]>();
 
 		public event ConnectHandle OnConnect;
 		public event DisconnectHandle OnDisconnect;
@@ -90,7 +89,7 @@ namespace EZUDP.Client
 		TcpClient tcpSocket;
 		UdpClient udpSocket;
 
-		Thread receiveThread, receiveDataThread, sendThread, aliveThread;
+		Thread receiveThread, sendThread, aliveThread;
 
 		public bool Connected
 		{
@@ -151,12 +150,10 @@ namespace EZUDP.Client
 				udpSocket.Send(buff, 4);
 
 				receiveThread = new Thread(ReceiveThread);
-				receiveDataThread = new Thread(ReceiveDataThread);
 				sendThread = new Thread(SendThread);
 				aliveThread = new Thread(AliveThread);
 
 				receiveThread.Start();
-				receiveDataThread.Start();
 				sendThread.Start();
 				aliveThread.Start();
 
@@ -178,28 +175,7 @@ namespace EZUDP.Client
 					IPEndPoint ip = udpAdress;
 					byte[] data = udpSocket.Receive(ref ip);
 
-					inMessagesRaw.Add(data);
-				}
-				catch (Exception e)
-				{
-					CatchException(e);
-				}
-			}
-		}
-
-		void ReceiveDataThread()
-		{
-			while (Connected)
-			{
-				try
-				{
-					while (inMessagesRaw.Count > 0)
-					{
-						ReceiveData(inMessagesRaw[0]);
-						inMessagesRaw.RemoveAt(0);
-					}
-
-					Thread.Sleep(5);
+					ReceiveData(data);
 				}
 				catch (Exception e)
 				{
@@ -240,16 +216,16 @@ namespace EZUDP.Client
 		{
 			while (Connected)
 			{
-				while (outMessages.Count > 0)
+				for (int i = 0; i < outMessages.Count; i++)
 				{
-					if (DebugInfo.Data) Debug("Sent " + outMessages[0].Size);
+					if (DebugInfo.Data) Debug("Sent " + outMessages[i].Size);
 
-					udpSocket.Send(outMessages[0].Array, outMessages[0].Size);
-					upByteBuffer += outMessages[0].Size;
-					upByteTotal += outMessages[0].Size;
-
-					outMessages.RemoveAt(0);
+					udpSocket.Send(outMessages[i].Array, outMessages[i].Size);
+					upByteBuffer += outMessages[i].Size;
+					upByteTotal += outMessages[i].Size;
 				}
+
+				outMessages.Clear();
 
 				Thread.Sleep(1);
 			}

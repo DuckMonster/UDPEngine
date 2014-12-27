@@ -71,7 +71,7 @@ namespace EZUDP.Server
 		{
 			MessageBuffer message;
 			IPEndPoint adress;
-			Server.EzServer server;
+			EzServer server;
 
 			public MessageBuffer Message
 			{
@@ -133,13 +133,12 @@ namespace EZUDP.Server
 		List<string> debugMessageList = new List<string>();
 		public void Debug(string s) { debugMessageList.Add(s); }
 		List<MessageInfo> inMessages = new List<MessageInfo>(), outMessages = new List<MessageInfo>();
-		List<Tuple<byte[], IPEndPoint>> inMessagesRaw = new List<Tuple<byte[], IPEndPoint>>();
 
 		UdpClient udpSocket;
 		TcpListener tcpSocket;
 		int tcpPort, udpPort;
 
-		Thread acceptThread, receiveThread, receiveDataThread, sendThread;
+		Thread acceptThread, receiveThread, sendThread;
 
 		public bool Active
 		{
@@ -185,12 +184,10 @@ namespace EZUDP.Server
 
 				acceptThread = new Thread(AcceptThread);
 				receiveThread = new Thread(ReceiveThread);
-				receiveDataThread = new Thread(ReceiveDataThread);
 				sendThread = new Thread(SendThread);
 
 				acceptThread.Start();
 				receiveThread.Start();
-				receiveDataThread.Start();
 				sendThread.Start();
 
 				OnStart();
@@ -256,28 +253,11 @@ namespace EZUDP.Server
 					IPEndPoint ip = new IPEndPoint(IPAddress.Any, 0);
 					byte[] data = udpSocket.Receive(ref ip);
 
-					inMessagesRaw.Add(Tuple.Create(data, ip));
+					ReceiveData(data, ip);
 				}
-				catch (Exception e)
+				catch (SocketException e)
 				{
-					CatchException(e);
-				}
-			}
-		}
-
-		void ReceiveDataThread()
-		{
-			while (Active)
-			{
-				try
-				{
-					while (inMessagesRaw.Count > 0)
-					{
-						ReceiveData(inMessagesRaw[0].Item1, inMessagesRaw[0].Item2);
-						inMessagesRaw.RemoveAt(0);
-					}
-
-					Thread.Sleep(5);
+					continue;
 				}
 				catch (Exception e)
 				{
@@ -345,8 +325,10 @@ namespace EZUDP.Server
 			{
 				while (outMessages.Count > 0)
 				{
-					if (outMessages[0] != null)
+					for (int i = 0; i < outMessages.Count; i++)
 					{
+						while (outMessages[i] == null) ;
+
 						if (DebugInfo.downData && outMessages[0].Message.Size > 1)
 						{
 							string dataString = "";
@@ -354,14 +336,14 @@ namespace EZUDP.Server
 							Debug("Sending " + outMessages[0].Message.Size + "[" + dataString + "]");
 						}
 
-						outMessages[0].Send();
-						upByteBuffer += outMessages[0].Message.Size;
-						upByteTotal += outMessages[0].Message.Size;
-
-						outMessages.RemoveAt(0);
+						outMessages[i].Send();
+						upByteBuffer += outMessages[i].Message.Size;
+						upByteTotal += outMessages[i].Message.Size;
 					}
 
-					Thread.Sleep(1);
+					outMessages.Clear();
+
+					//Thread.Sleep(1);
 				}
 			}
 		}
