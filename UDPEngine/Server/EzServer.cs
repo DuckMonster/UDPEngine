@@ -71,7 +71,7 @@ namespace EZUDP.Server
 		{
 			MessageBuffer message;
 			IPEndPoint adress;
-			EzServer server;
+			Server.EzServer server;
 
 			public MessageBuffer Message
 			{
@@ -96,7 +96,7 @@ namespace EZUDP.Server
 				}
 			}
 
-			public MessageInfo(MessageBuffer message, IPEndPoint endPoint, EzServer s)
+			public MessageInfo(MessageBuffer message, IPEndPoint endPoint, Server.EzServer s)
 			{
 				server = s;
 				Message = message;
@@ -105,12 +105,7 @@ namespace EZUDP.Server
 
 			public void Send()
 			{
-				new Thread(SendThread).Start();
-			}
-
-			void SendThread()
-			{
-				server.SendData(message.Array, adress);
+				server.udpSocket.Send(message.Array, message.Size, adress);
 			}
 		}
 
@@ -263,10 +258,6 @@ namespace EZUDP.Server
 
 					inMessagesRaw.Add(Tuple.Create(data, ip));
 				}
-				catch (SocketException e)
-				{
-
-				}
 				catch (Exception e)
 				{
 					CatchException(e);
@@ -286,7 +277,7 @@ namespace EZUDP.Server
 						inMessagesRaw.RemoveAt(0);
 					}
 
-					Thread.Sleep(5);
+					Thread.Sleep(1);
 				}
 				catch (Exception e)
 				{
@@ -390,19 +381,11 @@ namespace EZUDP.Server
 			disconnectedList.Add(c);
 		}
 
-		void SendData(byte[] data, IPEndPoint ip)
-		{
-			udpSocket.Send(data, data.Length, ip);
-		}
 		public void Send(MessageBuffer msg, int id) { Send(msg, GetClient(id)); }
 		public void Send(MessageBuffer msg, Client c)
 		{
-			/*
 			if (c != null && c.udpAdress != null)
 				outMessages.Add(new MessageInfo(msg, c.udpAdress, this));
-			 * */
-
-			new MessageInfo(msg, c.udpAdress, this).Send();
 		}
 
 		public void Close()
@@ -418,12 +401,10 @@ namespace EZUDP.Server
 			acceptThread.Abort();
 			sendThread.Abort();
 			receiveThread.Abort();
-			receiveDataThread.Abort();
 
 			acceptThread = null;
 			sendThread = null;
 			receiveThread = null;
-			receiveDataThread = null;
 
 			List<Client> list = new List<Client>();
 			list.AddRange(clientList);
