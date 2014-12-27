@@ -71,7 +71,7 @@ namespace EZUDP.Server
 		{
 			MessageBuffer message;
 			IPEndPoint adress;
-			Server.EzServer server;
+			EzServer server;
 
 			public MessageBuffer Message
 			{
@@ -96,7 +96,7 @@ namespace EZUDP.Server
 				}
 			}
 
-			public MessageInfo(MessageBuffer message, IPEndPoint endPoint, Server.EzServer s)
+			public MessageInfo(MessageBuffer message, IPEndPoint endPoint, EzServer s)
 			{
 				server = s;
 				Message = message;
@@ -105,7 +105,12 @@ namespace EZUDP.Server
 
 			public void Send()
 			{
-				server.udpSocket.Send(message.Array, message.Size, adress);
+				new Thread(SendThread).Start();
+			}
+
+			void SendThread()
+			{
+				server.SendData(message.Array, adress);
 			}
 		}
 
@@ -133,12 +138,13 @@ namespace EZUDP.Server
 		List<string> debugMessageList = new List<string>();
 		public void Debug(string s) { debugMessageList.Add(s); }
 		List<MessageInfo> inMessages = new List<MessageInfo>(), outMessages = new List<MessageInfo>();
+		List<Tuple<byte[], IPEndPoint>> inMessagesRaw = new List<Tuple<byte[], IPEndPoint>>();
 
 		UdpClient udpSocket;
 		TcpListener tcpSocket;
 		int tcpPort, udpPort;
 
-		Thread acceptThread, receiveThread, sendThread;
+		Thread acceptThread, receiveThread, receiveDataThread, sendThread;
 
 		public bool Active
 		{
@@ -184,10 +190,12 @@ namespace EZUDP.Server
 
 				acceptThread = new Thread(AcceptThread);
 				receiveThread = new Thread(ReceiveThread);
+				receiveDataThread = new Thread(ReceiveDataThread);
 				sendThread = new Thread(SendThread);
 
 				acceptThread.Start();
 				receiveThread.Start();
+				receiveDataThread.Start();
 				sendThread.Start();
 
 				OnStart();
@@ -253,60 +261,87 @@ namespace EZUDP.Server
 					IPEndPoint ip = new IPEndPoint(IPAddress.Any, 0);
 					byte[] data = udpSocket.Receive(ref ip);
 
-					if (DebugInfo.downData && data.Length > 1)
-					{
-						string dataString = "";
-						foreach (byte b in data) dataString += b + " ";
-						Debug("Received " + data.Length + "[" + dataString + "]");
-					}
-
-					Client c = GetClient(ip);
-
-					//Pinged
-					if (c != null && data.Length == 1 && data[0] == pingByte)
-					{
-						if (c.Pinging)
-						{
-							c.Ping();
-						}
-						else
-						{
-							Send(new MessageBuffer(data), c);
-						}
-
-						continue;
-					}
-
-					if (c != null)
-					{
-						inMessages.Add(new MessageInfo(new MessageBuffer(data), ip, this));
-					}
-					else if (data.Length == 4)
-					{
-						int id = BitConverter.ToInt32(data, 0);
-						c = GetClient(id);
-
-						if (c != null)
-						{
-							if (DebugInfo.acceptData) Debug("Received udp ip for ID " + id);
-
-							c.udpAdress = ip;
-							connectedList.Add(c);
-						}
-					} 
-					
-					if (c == null) {
-						Debug("Received data from unknown client...");
-					}
-
-					downByteBuffer += data.Length;
-					downByteTotal += data.Length;
+					inMessagesRaw.Add(Tuple.Create(data, ip));
 				}
 				catch (Exception e)
 				{
 					CatchException(e);
 				}
 			}
+		}
+
+		void ReceiveDataThread()
+		{
+			while (Active)
+			{
+				try
+				{
+					while (inMessagesRaw.Count > 0)
+					{
+						ReceiveData(inMessagesRaw[0].Item1, inMessagesRaw[0].Item2);
+						inMessagesRaw.RemoveAt(0);
+					}
+
+					Thread.Sleep(5);
+				}
+				catch (Exception e)
+				{
+					CatchException(e);
+				}
+			}
+		}
+
+		void ReceiveData(byte[] data, IPEndPoint ip)
+		{
+			if (DebugInfo.downData && data.Length > 1)
+			{
+				string dataString = "";
+				foreach (byte b in data) dataString += b + " ";
+				Debug("Received " + data.Length + "[" + dataString + "]");
+			}
+
+			Client c = GetClient(ip);
+
+			//Pinged
+			if (c != null && data.Length == 1 && data[0] == pingByte)
+			{
+				if (c.Pinging)
+				{
+					c.Ping();
+				}
+				else
+				{
+					Send(new MessageBuffer(data), c);
+				}
+
+				return;
+			}
+
+			if (c != null)
+			{
+				inMessages.Add(new MessageInfo(new MessageBuffer(data), ip, this));
+			}
+			else if (data.Length == 4)
+			{
+				int id = BitConverter.ToInt32(data, 0);
+				c = GetClient(id);
+
+				if (c != null)
+				{
+					if (DebugInfo.acceptData) Debug("Received udp ip for ID " + id);
+
+					c.udpAdress = ip;
+					connectedList.Add(c);
+				}
+			}
+
+			if (c == null)
+			{
+				Debug("Received data from unknown client...");
+			}
+
+			downByteBuffer += data.Length;
+			downByteTotal += data.Length;
 		}
 
 		void SendThread()
@@ -351,11 +386,19 @@ namespace EZUDP.Server
 			disconnectedList.Add(c);
 		}
 
+		void SendData(byte[] data, IPEndPoint ip)
+		{
+			udpSocket.Send(data, data.Length, ip);
+		}
 		public void Send(MessageBuffer msg, int id) { Send(msg, GetClient(id)); }
 		public void Send(MessageBuffer msg, Client c)
 		{
+			/*
 			if (c != null && c.udpAdress != null)
 				outMessages.Add(new MessageInfo(msg, c.udpAdress, this));
+			 * */
+
+			new MessageInfo(msg, c.udpAdress, this).Send();
 		}
 
 		public void Close()
@@ -371,10 +414,12 @@ namespace EZUDP.Server
 			acceptThread.Abort();
 			sendThread.Abort();
 			receiveThread.Abort();
+			receiveDataThread.Abort();
 
 			acceptThread = null;
 			sendThread = null;
 			receiveThread = null;
+			receiveDataThread = null;
 
 			List<Client> list = new List<Client>();
 			list.AddRange(clientList);

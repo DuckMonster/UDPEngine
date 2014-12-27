@@ -72,11 +72,47 @@ namespace EZUDP.Client
 		public delegate void PingHandle(int m);
 		public delegate void DebugHandle(string msg);
 
+		class MessageInfo
+		{
+			MessageBuffer message;
+			EzClient client;
+
+			public MessageBuffer Message
+			{
+				get
+				{
+					return message;
+				}
+				set
+				{
+					message = value;
+				}
+			}
+
+			public MessageInfo(MessageBuffer message, EzClient c)
+			{
+				client = c;
+				Message = message;
+			}
+
+			public void Send()
+			{
+				new Thread(SendThread).Start();
+			}
+
+			void SendThread()
+			{
+				client.SendData(message.Array);
+			}
+		}
+
 		int myID;
 
 		List<string> debugMessageList = new List<string>();
 		void Debug(string s) { debugMessageList.Add(s); }
-		List<MessageBuffer> inMessages = new List<MessageBuffer>(), outMessages = new List<MessageBuffer>();
+		List<MessageBuffer> inMessages = new List<MessageBuffer>();
+		List<MessageInfo> outMessages = new List<MessageInfo>();
+		List<byte[]> inMessagesRaw = new List<byte[]>();
 
 		public event ConnectHandle OnConnect;
 		public event DisconnectHandle OnDisconnect;
@@ -89,7 +125,7 @@ namespace EZUDP.Client
 		TcpClient tcpSocket;
 		UdpClient udpSocket;
 
-		Thread receiveThread, sendThread, aliveThread;
+		Thread receiveThread, receiveDataThread, sendThread, aliveThread;
 
 		public bool Connected
 		{
@@ -150,10 +186,12 @@ namespace EZUDP.Client
 				udpSocket.Send(buff, 4);
 
 				receiveThread = new Thread(ReceiveThread);
+				receiveDataThread = new Thread(ReceiveDataThread);
 				sendThread = new Thread(SendThread);
 				aliveThread = new Thread(AliveThread);
 
 				receiveThread.Start();
+				receiveDataThread.Start();
 				sendThread.Start();
 				aliveThread.Start();
 
@@ -175,30 +213,7 @@ namespace EZUDP.Client
 					IPEndPoint ip = udpAdress;
 					byte[] data = udpSocket.Receive(ref ip);
 
-					if (DebugInfo.Data) Debug("Received " + data.Length);
-
-					if (data.Length == 1 && data[0] == pingByte)
-					{
-						if (Pinging)
-						{
-							if (OnPing != null)
-							{
-								OnPing(pingWatch.Elapsed.Milliseconds);
-							}
-
-							pingWatch = null;
-						}
-						else
-						{
-							udpSocket.Send(data, data.Length);
-						}
-
-						continue;
-					}
-
-					inMessages.Add(new MessageBuffer(data));
-					downByteBuffer += data.Length;
-					downByteTotal += data.Length;
+					inMessagesRaw.Add(data);
 				}
 				catch (Exception e)
 				{
@@ -207,17 +222,66 @@ namespace EZUDP.Client
 			}
 		}
 
+		void ReceiveDataThread()
+		{
+			while (Connected)
+			{
+				try
+				{
+					while (inMessagesRaw.Count > 0)
+					{
+						ReceiveData(inMessagesRaw[0]);
+						inMessagesRaw.RemoveAt(0);
+					}
+
+					Thread.Sleep(5);
+				}
+				catch (Exception e)
+				{
+					CatchException(e);
+				}
+			}
+		}
+
+		void ReceiveData(byte[] data)
+		{
+			if (DebugInfo.Data) Debug("Received " + data.Length);
+
+			if (data.Length == 1 && data[0] == pingByte)
+			{
+				if (Pinging)
+				{
+					if (OnPing != null)
+					{
+						OnPing(pingWatch.Elapsed.Milliseconds);
+					}
+
+					pingWatch = null;
+				}
+				else
+				{
+					udpSocket.Send(data, data.Length);
+				}
+
+				return;
+			}
+
+			inMessages.Add(new MessageBuffer(data));
+			downByteBuffer += data.Length;
+			downByteTotal += data.Length;
+		}
+
 		void SendThread()
 		{
 			while (Connected)
 			{
 				while (outMessages.Count > 0)
 				{
-					if (DebugInfo.Data) Debug("Sent " + outMessages[0].Size);
+					if (DebugInfo.Data) Debug("Sent " + outMessages[0].Message.Size);
 
-					udpSocket.Send(outMessages[0].Array, outMessages[0].Size);
-					upByteBuffer += outMessages[0].Size;
-					upByteTotal += outMessages[0].Size;
+					outMessages[0].Send();
+					upByteBuffer += outMessages[0].Message.Size;
+					upByteTotal += outMessages[0].Message.Size;
 
 					outMessages.RemoveAt(0);
 				}
@@ -259,9 +323,15 @@ namespace EZUDP.Client
 			OnDisconnect();
 		}
 
+		void SendData(byte[] data)
+		{
+			udpSocket.Send(data, data.Length);
+		}
+
 		public void Send(MessageBuffer msg)
 		{
-			outMessages.Add(msg);
+			//outMessages.Add(new MessageInfo(msg, this));
+			new MessageInfo(msg, this).Send();
 		}
 
 		void CatchException(Exception e)
