@@ -119,6 +119,8 @@ namespace EZUDP.Client
 		{
 			while (inMessages.Count > 0)
 			{
+				while (inMessages[0] == null) ;
+
 				OnMessage(inMessages[0]);
 				inMessages.RemoveAt(0);
 			}
@@ -218,6 +220,8 @@ namespace EZUDP.Client
 			{
 				for (int i = 0; i < outMessages.Count; i++)
 				{
+					while (outMessages[i] == null) ;
+
 					if (DebugInfo.Data) Debug("Sent " + outMessages[i].Size);
 
 					udpSocket.Send(outMessages[i].Array, outMessages[i].Size);
