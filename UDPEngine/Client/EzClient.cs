@@ -286,5 +286,24 @@ namespace EZUDP.Client
 				udpSocket.Send(new byte[] { pingByte }, 1);
 			}
 		}
+
+		public static long Ping(IPEndPoint ip)
+		{
+			UdpClient client = new UdpClient();
+
+			client.Connect(ip);
+
+			Stopwatch watch = Stopwatch.StartNew();
+
+			client.Send(new byte[] { pingByte }, 1);
+			var data = client.Receive(ref ip);
+
+			long millis = watch.Elapsed.Milliseconds;
+			watch.Stop();
+
+			client.Close();
+
+			return millis;
+		}
 	}
 }

@@ -60,6 +60,7 @@ namespace EZUDP.Server
 		public delegate void StartHandle();
 		public delegate void ConnectHandle(Client c);
 		public delegate void MessageHandle(Client c, MessageBuffer m);
+		public delegate void MessageExtHandle(IPEndPoint ip, MessageBuffer m);
 		public delegate void DisconnectHandle(Client c);
 		public delegate void ExceptionHandle(Exception e);
 		public delegate void PingHandle(Client c, int millis);
@@ -126,13 +127,15 @@ namespace EZUDP.Server
 		public event ConnectHandle OnConnect;
 		public event DisconnectHandle OnDisconnect;
 		public event MessageHandle OnMessage;
+		public event MessageExtHandle OnMessageExternal;
 		public event ExceptionHandle OnException;
 		public event PingHandle OnPing;
 		public event DebugHandle OnDebug;
 
 		List<string> debugMessageList = new List<string>();
 		public void Debug(string s) { debugMessageList.Add(s); }
-		List<MessageInfo> inMessages = new List<MessageInfo>(), outMessages = new List<MessageInfo>();
+		List<MessageInfo> inMessages = new List<MessageInfo>(), outMessages = new List<MessageInfo>(),
+			inMessagesExternal = new List<MessageInfo>();
 
 		UdpClient udpSocket;
 		TcpListener tcpSocket;
@@ -180,7 +183,7 @@ namespace EZUDP.Server
 			try
 			{
 				udpSocket = new UdpClient(udpPort);
-				tcpSocket = new TcpListener(IPAddress.Parse(ip), tcpPort);
+				tcpSocket = new TcpListener(IPAddress.Any, tcpPort);
 
 				acceptThread = new Thread(AcceptThread);
 				receiveThread = new Thread(ReceiveThread);
@@ -204,6 +207,11 @@ namespace EZUDP.Server
 			{
 				OnMessage(GetClient(inMessages[0].Adress), inMessages[0].Message);
 				inMessages.RemoveAt(0);
+			}
+
+			while (inMessagesExternal.Count > 0)
+			{
+				OnMessageExternal(inMessagesExternal[0].Adress, inMessagesExternal[0].Message);
 			}
 
 			while (connectedList.Count > 0)
@@ -278,21 +286,21 @@ namespace EZUDP.Server
 			Client c = GetClient(ip);
 
 			//Pinged
-			if (c != null && data.Length == 1 && data[0] == pingByte)
+			if (data.Length == 1 && data[0] == pingByte)
 			{
-				if (c.Pinging)
+				if (c != null && c.Pinging)
 				{
 					c.Ping();
 				}
 				else
 				{
-					Send(new MessageBuffer(data), c);
+					udpSocket.Send(data, 1, ip);
 				}
 
 				return;
 			}
 
-			if (c != null)
+			else if (c != null)
 			{
 				inMessages.Add(new MessageInfo(new MessageBuffer(data), ip, this));
 			}
@@ -308,6 +316,10 @@ namespace EZUDP.Server
 					c.udpAdress = ip;
 					connectedList.Add(c);
 				}
+			}
+			else
+			{
+				inMessagesExternal.Add(new MessageInfo(new MessageBuffer(data), ip, this));
 			}
 
 			if (c == null)
@@ -368,6 +380,11 @@ namespace EZUDP.Server
 		{
 			if (c != null && c.udpAdress != null)
 				outMessages.Add(new MessageInfo(msg, c.udpAdress, this));
+		}
+
+		public void SendExternal(MessageBuffer msg, IPEndPoint ip)
+		{
+			outMessages.Add(new MessageInfo(msg, ip, this));
 		}
 
 		public void Close()

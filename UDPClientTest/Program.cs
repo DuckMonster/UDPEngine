@@ -6,6 +6,7 @@ using System.Threading;
 
 using EZUDP;
 using EZUDP.Client;
+using System.Net;
 
 namespace UDPClientTest
 {
@@ -81,6 +82,13 @@ namespace UDPClientTest
 						Console.Clear();
 						Console.WriteLine("Connecting....");
 						client.Connect("127.0.0.1", 1255, 1337);
+					}
+
+					if (m == "ping")
+					{
+						Console.Clear();
+						Console.Write("Ping: ");
+						Console.WriteLine(EzClient.Ping(new IPEndPoint(IPAddress.Parse("127.0.0.1"), 1337)));
 					}
 				}
 			}
