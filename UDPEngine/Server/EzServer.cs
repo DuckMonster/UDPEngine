@@ -212,6 +212,7 @@ namespace EZUDP.Server
 			while (inMessagesExternal.Count > 0)
 			{
 				OnMessageExternal(inMessagesExternal[0].Adress, inMessagesExternal[0].Message);
+				inMessagesExternal.RemoveAt(0);
 			}
 
 			while (connectedList.Count > 0)
@@ -261,7 +262,8 @@ namespace EZUDP.Server
 					IPEndPoint ip = new IPEndPoint(IPAddress.Any, 0);
 					byte[] data = udpSocket.Receive(ref ip);
 
-					ReceiveData(data, ip);
+					if (data.Length > 0)
+						ReceiveData(data, ip);
 				}
 				catch (SocketException e)
 				{
@@ -320,11 +322,6 @@ namespace EZUDP.Server
 			else
 			{
 				inMessagesExternal.Add(new MessageInfo(new MessageBuffer(data), ip, this));
-			}
-
-			if (c == null)
-			{
-				Debug("Received data from unknown client...");
 			}
 
 			downByteBuffer += data.Length;
