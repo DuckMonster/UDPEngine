@@ -351,9 +351,9 @@ namespace EZUDP.Server
 					}
 
 					outMessages.Clear();
-
-					//Thread.Sleep(1);
 				}
+
+				Thread.Sleep(5);
 			}
 		}
 
