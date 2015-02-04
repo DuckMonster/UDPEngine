@@ -267,6 +267,7 @@ namespace EZUDP.Server
 				}
 				catch (SocketException e)
 				{
+					CatchException(e);
 					continue;
 				}
 				catch (Exception e)
