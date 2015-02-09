@@ -273,6 +273,7 @@ namespace EZUDP.Server
 				catch (Exception e)
 				{
 					CatchException(e);
+					continue;
 				}
 			}
 		}
